@@ -13,7 +13,7 @@ our %EXPORT_TAGS = ( 'all' => [ qw( ) ] );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw( );
 
-our $VERSION = '0.09'; 
+our $VERSION = '0.10'; 
 
 #==================================================================
 # new()
@@ -734,6 +734,10 @@ and also execution of other necessary operations on handle of a Gecad Technologi
 
 Operation with a mail server is carried out by means of Telnet protocol with Net::Telnet module usage.
 
+Note: Gecad Technologies do not offer support and should not be contacted for support regarding the Perl module Net::Axigen.
+Gecad Technologies and the author of the Net::Axigen module do not take full responsibility 
+in case of miss-usage of the Perl module or for any damage caused in this matter.
+
 =head1 SYNOPSIS
 
 =head2 Connections
@@ -774,7 +778,7 @@ Operation with a mail server is carried out by means of Telnet protocol with Net
 	$axi->removeAccount($domain, $user);
 
 	$axi->setAccountContactData($domain, $user, $firstName, $lastName);
-	$axi->setQuotaLimitNotification($domain, $user, $firstName, $lastName);
+	$axi->setQuotaLimitNotification($domain, $user, $notificationSubject, $notificationMsg);
 	$axi->setAccountPassword($domain, $user, $password);
 
 =head2 Quotas
