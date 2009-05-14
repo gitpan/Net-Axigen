@@ -13,7 +13,7 @@ our %EXPORT_TAGS = ( 'all' => [ qw( ) ] );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw( );
 
-our $VERSION = '0.10'; 
+our $VERSION = '0.11'; 
 
 #==================================================================
 # new()
@@ -194,7 +194,7 @@ sub _listAccounts
 {
   my $this = shift @_;
 	my $r=$this->_cmd('LIST ACCOUNTS', 'domain');
-	if(!$r->{rc}) { die "Net::Axigen::listAccounts: ".$r->{rc_str}.": ".'LIST ACCOUNTS'; }	
+	if(!$r->{rc}) { die "Net::Axigen::_listAccounts: ".$r->{rc_str}.": ".'LIST ACCOUNTS'; }	
 	
 	my $accounts=$r->{result};
 	
@@ -230,6 +230,69 @@ sub listAccounts
 	{
 		die 'ERROR Net::Axigen::listAccounts: Domain '.$domain.' does not exist in AXIGEN';
 	}
+}
+
+# ==================================================================
+# listAccountsEx
+# ==================================================================
+sub listAccountsEx
+{
+  my $this = shift @_;
+  my $domain = shift @_;
+	my $r;
+	my %accounts_info=();
+
+	if($this->_hasDomain($domain))
+	{
+		$r=$this->_cmd("UPDATE DOMAIN NAME $domain", 'domain');
+		if(!$r->{rc}) { die "Net::Axigen::listAccountsEx: ".$r->{rc_str}.": "."UPDATE DOMAIN NAME $domain"; }
+
+		my $accounts_list = $this->_listAccounts($domain);
+		foreach my $ptr(@$accounts_list) 
+		{
+			my %acc = ('firstName' => $this->_getAccountAttr($ptr, 'firstName'), 'lastName' => $this->_getAccountAttr($ptr, 'lastName'));
+			$accounts_info{ $ptr }= \%acc;
+		}
+
+		$r=$this->_cmd("BACK", '');
+		if(!$r->{rc}) { die "Net::Axigen::listAccountsEx: ".$r->{rc_str}.": "."BACK"; }
+		return \%accounts_info;
+	}
+	else
+	{
+		die 'ERROR Net::Axigen::listAccountsEx: Domain '.$domain.' does not exist in AXIGEN';
+	}
+}
+
+# ==================================================================
+# _getAccountAttr
+# ==================================================================
+sub _getAccountAttr
+{
+  my $this = shift @_;
+  my $account = shift @_;
+  my $attr = shift @_;
+	my $r;
+	
+	$r=$this->_cmd("UPDATE ACCOUNT $account", 'domain-account');
+	if(!$r->{rc}) { die "Net::Axigen::_getAccountAttr: ".$r->{rc_str}.": "."UPDATE ACCOUNT $account"; }
+	
+	$r=$this->_cmd("CONFIG ContactInfo", 'domain-account-contactInfo');
+	if(!$r->{rc}) { die "Net::Axigen::_getAccountAttr: ".$r->{rc_str}.": "."CONFIG ContactInfo"; }
+	
+	$r=$this->_cmd("SHOW ATTR $attr", 'domain-account-contactInfo');
+	if(!$r->{rc}) { die "Net::Axigen::_getAccountAttr: ".$r->{rc_str}.": "."show attr $attr"; }
+
+  (my $atr_name, my $eq, my $attr_val) = split('\s+', $r->{result}[0]);
+  $attr_val =~ s/"//g;
+	
+	$r=$this->_cmd("BACK", 'domain-account');
+	if(!$r->{rc}) { die "Net::Axigen::_getAccountAttr: ".$r->{rc_str}.": "."BACK"; }
+
+	$r=$this->_cmd("BACK", 'domain');
+	if(!$r->{rc}) { die "Net::Axigen::_getAccountAttr: ".$r->{rc_str}.": "."BACK"; }
+	
+	return $attr_val;
 }
 
 # ==================================================================
@@ -774,6 +837,13 @@ in case of miss-usage of the Perl module or for any damage caused in this matter
 	my $account_list = $axi->listAccounts('my-domain.com');
 	foreach my $ptr(@$account_list) { print "$ptr\n"; }
 
+  my $account_list = $axi->listAccountsEx($domain);
+  print "Account \t\tFirst Name\tSecond Name\n";
+  foreach my $acc( sort keys %$account_list) 
+  {
+     print "$acc\t".$account_list->{ $acc }->{firstName}."\t".$account_list->{ $acc }->{lastName}."\n"; 
+  }
+	
 	$axi->addAccount($domain, $user, $password);
 	$axi->removeAccount($domain, $user);
 
@@ -811,6 +881,7 @@ Samples of usage of the Net::Axigem module are in folder Net-Axigen\samples
 	samples/add_account.pl
 	samples/remove_account.pl
 	samples/compact_domains.pl
+	samples/accounts_info.pl
 	samples/io_exception_dbg.pl
 
 =head1 METHODS
@@ -940,6 +1011,17 @@ List all domain accounts.
  my $account_list = $axi->listAccounts('my-domain.com');
  foreach my $ptr(@$account_list) { print "$ptr\n"; }
 
+=item listAccountsEx()
+
+List all domain accounts whith contact information.
+
+ my $account_list = $axi->listAccountsEx($domain);
+ print "Account \t\tFirst Name\tSecond Name\n";
+ foreach my $acc( sort keys %$account_list) 
+ {
+   print "$acc\t".$account_list->{ $acc }->{firstName}."\t".$account_list->{ $acc }->{lastName}."\n"; 
+ }
+ 
 =item addAccount()
 
 Add account.

@@ -1,4 +1,4 @@
-Net-Axigen version 0.10
+Net-Axigen version 0.11
 =======================
 
 Net::Axigen - Perl extension for Gecad Technologies Axigen Mail Server (www.axigen.com).
@@ -67,6 +67,13 @@ SYNOPSIS
 	my $account_list = $axi->listAccounts('my-domain.com');
 	foreach my $ptr(@$account_list) { print "$ptr\n"; }
 
+  my $account_list = $axi->listAccountsEx($domain);
+  print "Account \t\tFirst Name\tSecond Name\n";
+  foreach my $acc( sort keys %$account_list) 
+  {
+     print "$acc\t".$account_list->{ $acc }->{firstName}."\t".$account_list->{ $acc }->{lastName}."\n"; 
+  }
+	
 	$axi->addAccount($domain, $user, $password);
 	$axi->removeAccount($domain, $user);
 
